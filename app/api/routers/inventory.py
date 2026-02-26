@@ -31,3 +31,12 @@ def list_inventory_items(
     items = db.query(InventoryItem).all()
     return items
 
+
+@router.delete("/{item_id}", status_code=204)
+def delete_inventory_item(
+    item_id: str,
+    db: Session = Depends(get_db),
+) -> None:
+    service = InventoryService(db)
+    service.delete_item(item_id)
+

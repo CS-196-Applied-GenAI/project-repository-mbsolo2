@@ -81,3 +81,10 @@ class InventoryService:
 
         return created_items
 
+    def delete_item(self, item_id: str) -> None:
+        item = self.session.get(InventoryItem, item_id)
+        if item is None:
+            return
+        self.session.delete(item)
+        self.session.commit()
+
