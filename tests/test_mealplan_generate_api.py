@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.db.models import InventoryItem
@@ -7,6 +8,20 @@ from app.db.session import SessionLocal
 from app.main import app
 
 client = TestClient(app)
+
+
+def _failing_search_recipes(self, preferences=None, limit=15):
+    raise RuntimeError("provider unavailable")
+
+
+def test_generate_returns_503_when_provider_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.services.recipe_provider.StubRecipeProvider.search_recipes",
+        _failing_search_recipes,
+    )
+    response = client.post("/api/v1/mealplan/generate", json={})
+    assert response.status_code == 503
+    assert response.json() == {"error": "recipe_provider_unavailable"}
 
 
 def test_generate_with_empty_inventory_returns_200_and_pool_size() -> None:
