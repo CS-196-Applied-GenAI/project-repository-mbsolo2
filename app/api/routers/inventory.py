@@ -3,11 +3,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.db.models import InventoryItem
 from app.db.session import get_db
-from app.schemas.inventory import (
-    InventoryCreateRequest,
-    InventoryItemOut,
-)
+from app.schemas.inventory import InventoryCreateRequest, InventoryItemOut
 from app.services.inventory_service import InventoryService
 
 
@@ -23,5 +21,13 @@ def create_inventory_items(
     items = service.add_items(
         [{"name": item.name, "quantity": item.quantity} for item in payload.items]
     )
+    return items
+
+
+@router.get("", response_model=list[InventoryItemOut])
+def list_inventory_items(
+    db: Session = Depends(get_db),
+) -> list[InventoryItemOut]:
+    items = db.query(InventoryItem).all()
     return items
 
