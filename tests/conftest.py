@@ -13,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.db.session import configure_session
+from app.db.models import init_db
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -26,4 +27,5 @@ def _test_database(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
 
     configure_session()
+    init_db()
 
