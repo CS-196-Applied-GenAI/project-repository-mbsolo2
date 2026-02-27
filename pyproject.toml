@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kitchen-support-backend"
+version = "0.1.0"
+description = "Kitchen Support backend (FastAPI + SQLite)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "sqlalchemy",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
