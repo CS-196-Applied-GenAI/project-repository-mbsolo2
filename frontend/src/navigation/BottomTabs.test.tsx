@@ -4,6 +4,10 @@ import React from 'react';
 
 import { BottomTabs } from './BottomTabs';
 
+jest.mock('../api/mealplanApi', () => ({
+  generateMealplan: jest.fn().mockResolvedValue([]),
+}));
+
 describe('BottomTabs', () => {
   it('renders the four tab labels', () => {
     render(

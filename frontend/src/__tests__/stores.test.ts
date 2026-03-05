@@ -11,6 +11,10 @@ jest.mock('../api/inventoryApi', () => ({
   deleteInventory: jest.fn(),
 }));
 
+jest.mock('../api/mealplanApi', () => ({
+  generateMealplan: jest.fn(),
+}));
+
 const sampleRecipes: Recipe[] = [
   {
     id: 'r1',
@@ -41,12 +45,33 @@ const sampleRecipes: Recipe[] = [
 describe('feedStore', () => {
   beforeEach(() => {
     feedStore.setState({ recipes: [], passedRecipeIds: [] });
+    jest.clearAllMocks();
   });
 
   it('initializes with recipes', () => {
     feedStore.getState().setRecipes(sampleRecipes);
     expect(feedStore.getState().recipes).toHaveLength(2);
     expect(feedStore.getState().recipes[0].title).toBe('Pasta');
+  });
+
+  it('fetchFeed sets recipes from mealplanApi (15 results)', async () => {
+    const { generateMealplan } = require('../api/mealplanApi');
+    const fifteenRecipes = Array.from({ length: 15 }, (_, i) => ({
+      recipe_id: `meal-${i + 1}`,
+      title: `Recipe ${i + 1}`,
+      servings: 2,
+      ingredients: [{ name: 'ingredient', amount: 1, unit: 'cup' }],
+      instructions: ['Step 1'],
+    }));
+    generateMealplan.mockResolvedValue(fifteenRecipes);
+
+    await feedStore.getState().fetchFeed();
+
+    expect(feedStore.getState().recipes).toHaveLength(15);
+    expect(feedStore.getState().recipes[0].id).toBe('meal-1');
+    expect(feedStore.getState().recipes[0].title).toBe('Recipe 1');
+    expect(feedStore.getState().recipes[14].id).toBe('meal-15');
+    expect(generateMealplan).toHaveBeenCalledTimes(1);
   });
 
   it('pass removes recipe from visible list; undo restores', () => {
