@@ -1,4 +1,5 @@
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { RecipeCard } from '../components/RecipeCard';
 import type { Recipe } from '../types/recipe';
 
 export const MOCK_RECIPES: Recipe[] = [
@@ -191,9 +192,7 @@ export default function FeedScreen() {
         data={MOCK_RECIPES}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text style={styles.title}>{item.title}</Text>
-          </View>
+          <RecipeCard recipe={item} />
         )}
       />
     </View>
@@ -203,13 +202,5 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  item: {
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ccc',
-  },
-  title: {
-    fontSize: 16,
   },
 });
