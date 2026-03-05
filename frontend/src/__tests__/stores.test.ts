@@ -1,5 +1,6 @@
 import { cookbookStore } from '../store/cookbookStore';
 import { feedStore } from '../store/feedStore';
+import { inventoryStore } from '../store/inventoryStore';
 import { uiStore } from '../store/uiStore';
 import { upcomingStore } from '../store/upcomingStore';
 import type { Recipe } from '../types/recipe';
@@ -86,6 +87,27 @@ describe('upcomingStore', () => {
     const pinned = upcomingStore.getState().pinned;
     expect(pinned.some((p) => p.recipeId === 'r1')).toBe(true);
     expect(pinned.find((p) => p.recipeId === 'r1')?.bucket).toBe('later');
+  });
+});
+
+describe('inventoryStore', () => {
+  beforeEach(() => {
+    inventoryStore.setState({ items: [] });
+  });
+
+  it('addLocalItem adds item; removeLocalItem removes it', () => {
+    inventoryStore.getState().addLocalItem('Milk', 2);
+    const items = inventoryStore.getState().items;
+    expect(items).toHaveLength(1);
+    expect(items[0].name).toBe('Milk');
+    expect(items[0].quantity).toBe(2);
+    expect(items[0].id).toBeDefined();
+    expect(items[0].location).toBe('pantry');
+    expect(items[0].expiresOn).toBeDefined();
+    expect(items[0].expired).toBe(false);
+
+    inventoryStore.getState().removeLocalItem(items[0].id);
+    expect(inventoryStore.getState().items).toHaveLength(0);
   });
 });
 
