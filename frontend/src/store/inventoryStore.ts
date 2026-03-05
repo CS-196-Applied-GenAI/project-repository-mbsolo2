@@ -62,6 +62,7 @@ export const inventoryStore = create<InventoryState>((set) => ({
       const items = inventoryStore.getState().items;
       await setJson(cacheKeys.inventory, { items });
       uiStore.getState().hideOfflineBanner();
+      uiStore.getState().setFeedStale(true);
     } catch (e) {
       set({
         error: e instanceof Error ? e.message : 'Failed to add item',
@@ -76,6 +77,7 @@ export const inventoryStore = create<InventoryState>((set) => ({
       const items = inventoryStore.getState().items;
       await setJson(cacheKeys.inventory, { items });
       uiStore.getState().hideOfflineBanner();
+      uiStore.getState().setFeedStale(true);
     } catch (e) {
       set({
         error: e instanceof Error ? e.message : 'Failed to delete item',

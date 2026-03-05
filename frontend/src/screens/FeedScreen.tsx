@@ -42,8 +42,17 @@ export default function FeedScreen() {
   const undo = uiStore.getState().undo;
   const passReasonVisible = uiStore((s) => s.passReasonVisible);
   const passReasonRecipeId = uiStore((s) => s.passReasonRecipeId);
+  const feedStale = uiStore((s) => s.feedStale);
+  const setFeedStale = uiStore.getState().setFeedStale;
   const showPassReasonModal = uiStore.getState().showPassReasonModal;
   const dismissPassReasonModal = uiStore.getState().dismissPassReasonModal;
+
+  const handleRefreshBanner = useCallback(async () => {
+    setRefreshing(true);
+    await fetchFeed();
+    setFeedStale(false);
+    setRefreshing(false);
+  }, [fetchFeed, setFeedStale]);
 
   const handlePass = (recipeId: string) => {
     setSelectedRecipeId(undefined);
@@ -59,6 +68,14 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
+      {feedStale && (
+        <View style={styles.feedStaleBanner}>
+          <Text style={styles.feedStaleText}>New recipes available</Text>
+          <Pressable style={styles.feedStaleButton} onPress={handleRefreshBanner}>
+            <Text style={styles.feedStaleButtonText}>Refresh</Text>
+          </Pressable>
+        </View>
+      )}
       <FlatList
         data={visibleRecipes}
         keyExtractor={(item) => item.id}
@@ -108,6 +125,31 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  feedStaleBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#e8f4fd',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#b8daff',
+  },
+  feedStaleText: {
+    fontSize: 14,
+    color: '#004085',
+  },
+  feedStaleButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#007AFF',
+    borderRadius: 6,
+  },
+  feedStaleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
   undoBanner: {
     position: 'absolute',

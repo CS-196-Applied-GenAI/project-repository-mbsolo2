@@ -48,6 +48,7 @@ export const feedStore = create<FeedState>((set) => ({
         passedRecipeIds: state.passedRecipeIds,
       });
       uiStore.getState().hideOfflineBanner();
+      uiStore.getState().setFeedStale(false);
     } catch {
       await feedStore.getState().loadFromCache();
       uiStore.getState().showOfflineBanner();
