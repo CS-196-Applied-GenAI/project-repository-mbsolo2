@@ -1,7 +1,10 @@
 import { FlatList, StyleSheet, View } from 'react-native';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { RecipeCard } from '../components/RecipeCard';
 import { RecipeDetailModal } from '../modals/RecipeDetailModal';
+import { cookbookStore } from '../store/cookbookStore';
+import { feedStore } from '../store/feedStore';
+import { upcomingStore } from '../store/upcomingStore';
 import type { Recipe } from '../types/recipe';
 
 export const MOCK_RECIPES: Recipe[] = [
@@ -188,24 +191,48 @@ export const MOCK_RECIPES: Recipe[] = [
 ];
 
 export default function FeedScreen() {
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const recipes = feedStore((s) => s.recipes);
+  const passedRecipeIds = feedStore((s) => s.passedRecipeIds);
+  const selectedRecipeId = feedStore((s) => s.selectedRecipeId);
+  const setRecipes = feedStore.getState().setRecipes;
+  const setSelectedRecipeId = feedStore.getState().setSelectedRecipeId;
+  const passRecipe = feedStore.getState().passRecipe;
+  const heartRecipe = cookbookStore.getState().heartRecipe;
+  const pinRecipe = upcomingStore.getState().pinRecipe;
+
+  useEffect(() => {
+    if (recipes.length === 0) {
+      setRecipes(MOCK_RECIPES);
+    }
+  }, [recipes.length, setRecipes]);
+
+  const visibleRecipes = recipes.filter((r) => !passedRecipeIds.includes(r.id));
+  const selectedRecipe = selectedRecipeId
+    ? recipes.find((r) => r.id === selectedRecipeId) ?? null
+    : null;
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={MOCK_RECIPES}
+        data={visibleRecipes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <RecipeCard
             recipe={item}
-            onPress={() => setSelectedRecipe(item)}
+            onPress={() => setSelectedRecipeId(item.id)}
+            onHeart={() => heartRecipe(item.id)}
+            onPin={() => pinRecipe(item.id)}
+            onPass={() => passRecipe(item.id)}
           />
         )}
       />
       <RecipeDetailModal
         visible={selectedRecipe !== null}
         recipe={selectedRecipe}
-        onClose={() => setSelectedRecipe(null)}
+        onClose={() => setSelectedRecipeId(undefined)}
+        onHeart={selectedRecipe ? () => heartRecipe(selectedRecipe.id) : undefined}
+        onPin={selectedRecipe ? () => pinRecipe(selectedRecipe.id) : undefined}
+        onPass={selectedRecipe ? () => passRecipe(selectedRecipe.id) : undefined}
       />
     </View>
   );
