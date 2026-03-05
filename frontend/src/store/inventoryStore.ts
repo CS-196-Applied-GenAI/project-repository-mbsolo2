@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 
 import * as inventoryApi from '../api/inventoryApi';
+import { cacheKeys, getJson, setJson } from '../services/cache';
 import type { InventoryItem } from '../types/inventory';
+import { uiStore } from './uiStore';
 
 function mapResponseToItem(r: inventoryApi.InventoryItemResponse): InventoryItem {
   const expiresOn =
@@ -20,6 +22,7 @@ interface InventoryState {
   items: InventoryItem[];
   error: string | null;
   fetchInventory: () => Promise<void>;
+  loadFromCache: () => Promise<void>;
   addInventoryItem: (name: string, quantity: number) => Promise<void>;
   deleteInventoryItem: (id: string) => Promise<void>;
   clearError: () => void;
@@ -32,11 +35,22 @@ export const inventoryStore = create<InventoryState>((set) => ({
     set({ error: null });
     try {
       const res = await inventoryApi.getInventory();
-      set({ items: res.map(mapResponseToItem) });
+      const items = res.map(mapResponseToItem);
+      set({ items });
+      await setJson(cacheKeys.inventory, { items });
+      uiStore.getState().hideOfflineBanner();
     } catch (e) {
+      await inventoryStore.getState().loadFromCache();
       set({
         error: e instanceof Error ? e.message : 'Failed to load inventory',
       });
+      uiStore.getState().showOfflineBanner();
+    }
+  },
+  loadFromCache: async () => {
+    const data = await getJson<{ items: InventoryItem[] }>(cacheKeys.inventory);
+    if (data?.items) {
+      set({ items: data.items });
     }
   },
   addInventoryItem: async (name, quantity) => {
@@ -45,6 +59,9 @@ export const inventoryStore = create<InventoryState>((set) => ({
       const res = await inventoryApi.addInventory([{ name: name.trim(), quantity }]);
       const newItems = res.map(mapResponseToItem);
       set((state) => ({ items: [...state.items, ...newItems] }));
+      const items = inventoryStore.getState().items;
+      await setJson(cacheKeys.inventory, { items });
+      uiStore.getState().hideOfflineBanner();
     } catch (e) {
       set({
         error: e instanceof Error ? e.message : 'Failed to add item',
@@ -56,6 +73,9 @@ export const inventoryStore = create<InventoryState>((set) => ({
     try {
       await inventoryApi.deleteInventory(id);
       set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
+      const items = inventoryStore.getState().items;
+      await setJson(cacheKeys.inventory, { items });
+      uiStore.getState().hideOfflineBanner();
     } catch (e) {
       set({
         error: e instanceof Error ? e.message : 'Failed to delete item',

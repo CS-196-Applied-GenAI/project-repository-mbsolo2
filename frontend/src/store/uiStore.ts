@@ -7,11 +7,14 @@ interface UIState {
   undoVisible: boolean;
   passReasonVisible: boolean;
   passReasonRecipeId: string | undefined;
+  offlineBannerVisible: boolean;
   showUndo: (recipeId: string) => void;
   dismissUndo: () => void;
   undo: () => void;
   showPassReasonModal: (recipeId: string) => void;
   dismissPassReasonModal: () => void;
+  showOfflineBanner: () => void;
+  hideOfflineBanner: () => void;
 }
 
 export const uiStore = create<UIState>((set, get) => ({
@@ -19,6 +22,7 @@ export const uiStore = create<UIState>((set, get) => ({
   undoVisible: false,
   passReasonVisible: false,
   passReasonRecipeId: undefined,
+  offlineBannerVisible: false,
   showUndo: (recipeId) => set({ undoPassRecipeId: recipeId, undoVisible: true }),
   dismissUndo: () => set({ undoVisible: false, undoPassRecipeId: undefined }),
   undo: () => {
@@ -32,4 +36,6 @@ export const uiStore = create<UIState>((set, get) => ({
     set({ passReasonVisible: true, passReasonRecipeId: recipeId }),
   dismissPassReasonModal: () =>
     set({ passReasonVisible: false, passReasonRecipeId: undefined }),
+  showOfflineBanner: () => set({ offlineBannerVisible: true }),
+  hideOfflineBanner: () => set({ offlineBannerVisible: false }),
 }));

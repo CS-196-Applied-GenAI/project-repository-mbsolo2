@@ -15,13 +15,18 @@ export default function InventoryScreen() {
   const items = inventoryStore((s) => s.items);
   const error = inventoryStore((s) => s.error);
   const fetchInventory = inventoryStore.getState().fetchInventory;
+  const loadFromCache = inventoryStore.getState().loadFromCache;
   const addInventoryItem = inventoryStore.getState().addInventoryItem;
   const deleteInventoryItem = inventoryStore.getState().deleteInventoryItem;
   const clearError = inventoryStore.getState().clearError;
 
   useEffect(() => {
-    fetchInventory();
-  }, [fetchInventory]);
+    const run = async () => {
+      await loadFromCache();
+      await fetchInventory();
+    };
+    run();
+  }, [fetchInventory, loadFromCache]);
 
   const sections = useMemo(() => {
     const soon = expiringSoon(items);

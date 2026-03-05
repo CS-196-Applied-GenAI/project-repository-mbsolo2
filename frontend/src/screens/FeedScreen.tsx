@@ -15,14 +15,19 @@ export default function FeedScreen() {
   const passedRecipeIds = feedStore((s) => s.passedRecipeIds);
   const selectedRecipeId = feedStore((s) => s.selectedRecipeId);
   const fetchFeed = feedStore.getState().fetchFeed;
+  const loadFromCache = feedStore.getState().loadFromCache;
   const setSelectedRecipeId = feedStore.getState().setSelectedRecipeId;
   const passRecipe = feedStore.getState().passRecipe;
   const heartRecipe = cookbookStore.getState().heartRecipe;
   const pinRecipe = upcomingStore.getState().pinRecipe;
 
   useEffect(() => {
-    fetchFeed();
-  }, [fetchFeed]);
+    const run = async () => {
+      await loadFromCache();
+      await fetchFeed();
+    };
+    run();
+  }, [fetchFeed, loadFromCache]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
