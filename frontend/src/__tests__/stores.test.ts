@@ -85,6 +85,7 @@ describe('upcomingStore', () => {
     upcomingStore.getState().pinRecipe('r1');
     const pinned = upcomingStore.getState().pinned;
     expect(pinned.some((p) => p.recipeId === 'r1')).toBe(true);
+    expect(pinned.find((p) => p.recipeId === 'r1')?.bucket).toBe('later');
   });
 });
 
