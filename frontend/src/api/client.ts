@@ -1,4 +1,8 @@
-const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
+const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:8000';
+
+export function getApiBaseUrl(): string {
+  return baseUrl.replace(/\/$/, '');
+}
 
 export interface ApiFetchOptions extends Omit<RequestInit, 'body'> {
   body?: Record<string, unknown> | unknown[];
@@ -6,7 +10,7 @@ export interface ApiFetchOptions extends Omit<RequestInit, 'body'> {
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const { body, ...rest } = options;
-  const url = `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+  const url = `${getApiBaseUrl()}/${path.replace(/^\//, '')}`;
   const res = await fetch(url, {
     ...rest,
     headers: {
