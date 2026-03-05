@@ -1,5 +1,7 @@
 import { FlatList, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
 import { RecipeCard } from '../components/RecipeCard';
+import { RecipeDetailModal } from '../modals/RecipeDetailModal';
 import type { Recipe } from '../types/recipe';
 
 export const MOCK_RECIPES: Recipe[] = [
@@ -186,14 +188,24 @@ export const MOCK_RECIPES: Recipe[] = [
 ];
 
 export default function FeedScreen() {
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+
   return (
     <View style={styles.container}>
       <FlatList
         data={MOCK_RECIPES}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <RecipeCard recipe={item} />
+          <RecipeCard
+            recipe={item}
+            onPress={() => setSelectedRecipe(item)}
+          />
         )}
+      />
+      <RecipeDetailModal
+        visible={selectedRecipe !== null}
+        recipe={selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
       />
     </View>
   );
