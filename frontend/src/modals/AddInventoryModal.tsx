@@ -11,7 +11,7 @@ import {
 export interface AddInventoryModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (name: string, quantity: number) => void;
+  onSubmit: (name: string, quantity: number) => void | Promise<void>;
 }
 
 export function AddInventoryModal({
@@ -22,14 +22,13 @@ export function AddInventoryModal({
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const trimmed = name.trim();
     const q = parseFloat(quantity);
     if (trimmed && !Number.isNaN(q) && q > 0) {
-      onSubmit(trimmed, q);
+      await Promise.resolve(onSubmit(trimmed, q));
       setName('');
       setQuantity('');
-      onClose();
     }
   };
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { InventoryRow } from '../components/InventoryRow';
@@ -13,8 +13,15 @@ import type { InventoryItem } from '../types/inventory';
 export default function InventoryScreen() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const items = inventoryStore((s) => s.items);
-  const addLocalItem = inventoryStore.getState().addLocalItem;
-  const removeLocalItem = inventoryStore.getState().removeLocalItem;
+  const error = inventoryStore((s) => s.error);
+  const fetchInventory = inventoryStore.getState().fetchInventory;
+  const addInventoryItem = inventoryStore.getState().addInventoryItem;
+  const deleteInventoryItem = inventoryStore.getState().deleteInventoryItem;
+  const clearError = inventoryStore.getState().clearError;
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   const sections = useMemo(() => {
     const soon = expiringSoon(items);
@@ -35,6 +42,13 @@ export default function InventoryScreen() {
     return result;
   }, [items]);
 
+  const handleAddSubmit = async (name: string, quantity: number) => {
+    await addInventoryItem(name, quantity);
+    if (!inventoryStore.getState().error) {
+      setAddModalVisible(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -47,6 +61,14 @@ export default function InventoryScreen() {
           <Text style={styles.addButtonText}>+ Add</Text>
         </Pressable>
       </View>
+      {error ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={clearError} hitSlop={8}>
+            <Text style={styles.errorDismiss}>Dismiss</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
@@ -56,7 +78,7 @@ export default function InventoryScreen() {
           </View>
         )}
         renderItem={({ item }) => (
-          <InventoryRow item={item} onDelete={removeLocalItem} />
+          <InventoryRow item={item} onDelete={deleteInventoryItem} />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -69,9 +91,7 @@ export default function InventoryScreen() {
       <AddInventoryModal
         visible={addModalVisible}
         onClose={() => setAddModalVisible(false)}
-        onSubmit={(name, quantity) => {
-          addLocalItem(name, quantity);
-        }}
+        onSubmit={handleAddSubmit}
       />
     </View>
   );
@@ -103,6 +123,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#007AFF',
     fontWeight: '500',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#fee',
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#c00',
+  },
+  errorDismiss: {
+    fontSize: 14,
+    color: '#007AFF',
+    marginLeft: 12,
   },
   sectionHeader: {
     paddingVertical: 10,

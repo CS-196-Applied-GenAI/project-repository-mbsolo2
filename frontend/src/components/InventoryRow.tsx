@@ -5,7 +5,7 @@ import type { InventoryItem } from '../types/inventory';
 
 export interface InventoryRowProps {
   item: InventoryItem;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
 }
 
 export function InventoryRow({ item, onDelete }: InventoryRowProps) {

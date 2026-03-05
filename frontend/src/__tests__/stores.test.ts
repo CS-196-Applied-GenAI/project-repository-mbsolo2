@@ -5,6 +5,12 @@ import { uiStore } from '../store/uiStore';
 import { upcomingStore } from '../store/upcomingStore';
 import type { Recipe } from '../types/recipe';
 
+jest.mock('../api/inventoryApi', () => ({
+  getInventory: jest.fn(),
+  addInventory: jest.fn(),
+  deleteInventory: jest.fn(),
+}));
+
 const sampleRecipes: Recipe[] = [
   {
     id: 'r1',
@@ -92,21 +98,88 @@ describe('upcomingStore', () => {
 
 describe('inventoryStore', () => {
   beforeEach(() => {
-    inventoryStore.setState({ items: [] });
+    inventoryStore.setState({ items: [], error: null });
+    jest.clearAllMocks();
   });
 
-  it('addLocalItem adds item; removeLocalItem removes it', () => {
-    inventoryStore.getState().addLocalItem('Milk', 2);
-    const items = inventoryStore.getState().items;
-    expect(items).toHaveLength(1);
-    expect(items[0].name).toBe('Milk');
-    expect(items[0].quantity).toBe(2);
-    expect(items[0].id).toBeDefined();
-    expect(items[0].location).toBe('pantry');
-    expect(items[0].expiresOn).toBeDefined();
-    expect(items[0].expired).toBe(false);
+  it('fetchInventory sets items from API', async () => {
+    const mockItems = [
+      {
+        item_id: 'i1',
+        name: 'Milk',
+        quantity: 1,
+        created_at: '2024-01-01T00:00:00',
+        location: 'fridge',
+        category: 'dairy',
+        storage_guidance: 'Keep cold',
+        expiration_date_estimated: '2024-01-08',
+        expiration_date_user_override: null,
+        expired_flag: false,
+      },
+    ];
+    const { getInventory } = require('../api/inventoryApi');
+    getInventory.mockResolvedValue(mockItems);
 
-    inventoryStore.getState().removeLocalItem(items[0].id);
+    await inventoryStore.getState().fetchInventory();
+
+    expect(inventoryStore.getState().items).toHaveLength(1);
+    expect(inventoryStore.getState().items[0].name).toBe('Milk');
+    expect(inventoryStore.getState().items[0].id).toBe('i1');
+    expect(inventoryStore.getState().error).toBeNull();
+  });
+
+  it('addInventoryItem adds item via API', async () => {
+    const { getInventory, addInventory } = require('../api/inventoryApi');
+    getInventory.mockResolvedValue([]);
+    await inventoryStore.getState().fetchInventory();
+
+    const added = [
+      {
+        item_id: 'i2',
+        name: 'Bread',
+        quantity: 2,
+        created_at: '2024-01-01T00:00:00',
+        location: 'pantry',
+        category: 'grain',
+        storage_guidance: 'Keep dry',
+        expiration_date_estimated: '2024-01-15',
+        expiration_date_user_override: null,
+        expired_flag: false,
+      },
+    ];
+    addInventory.mockResolvedValue(added);
+
+    await inventoryStore.getState().addInventoryItem('Bread', 2);
+
+    expect(inventoryStore.getState().items).toHaveLength(1);
+    expect(inventoryStore.getState().items[0].name).toBe('Bread');
+    expect(inventoryStore.getState().items[0].id).toBe('i2');
+  });
+
+  it('deleteInventoryItem removes item via API', async () => {
+    const { getInventory, deleteInventory } = require('../api/inventoryApi');
+    getInventory.mockResolvedValue([
+      {
+        item_id: 'i3',
+        name: 'Eggs',
+        quantity: 6,
+        created_at: '2024-01-01T00:00:00',
+        location: 'fridge',
+        category: 'protein',
+        storage_guidance: 'Refrigerate',
+        expiration_date_estimated: '2024-01-10',
+        expiration_date_user_override: null,
+        expired_flag: false,
+      },
+    ]);
+    deleteInventory.mockResolvedValue(undefined);
+
+    await inventoryStore.getState().fetchInventory();
+    expect(inventoryStore.getState().items).toHaveLength(1);
+
+    await inventoryStore.getState().deleteInventoryItem('i3');
+
+    expect(deleteInventory).toHaveBeenCalledWith('i3');
     expect(inventoryStore.getState().items).toHaveLength(0);
   });
 });

@@ -1,47 +1,71 @@
 import { create } from 'zustand';
 
+import * as inventoryApi from '../api/inventoryApi';
 import type { InventoryItem } from '../types/inventory';
 
-const DEFAULT_DAYS_UNTIL_EXPIRY = 7;
-const EXPIRING_SOON_DAYS = 3;
-
-function nextWeekISO(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + DEFAULT_DAYS_UNTIL_EXPIRY);
-  return d.toISOString().slice(0, 10);
-}
-
-function generateId(): string {
-  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+function mapResponseToItem(r: inventoryApi.InventoryItemResponse): InventoryItem {
+  const expiresOn =
+    r.expiration_date_user_override ?? r.expiration_date_estimated;
+  return {
+    id: r.item_id,
+    name: r.name,
+    quantity: r.quantity,
+    location: r.location,
+    expiresOn: typeof expiresOn === 'string' ? expiresOn.slice(0, 10) : '',
+    expired: r.expired_flag,
+  };
 }
 
 interface InventoryState {
   items: InventoryItem[];
-  addLocalItem: (name: string, quantity: number) => void;
-  removeLocalItem: (id: string) => void;
+  error: string | null;
+  fetchInventory: () => Promise<void>;
+  addInventoryItem: (name: string, quantity: number) => Promise<void>;
+  deleteInventoryItem: (id: string) => Promise<void>;
+  clearError: () => void;
 }
 
-export const inventoryStore = create<InventoryState>((set, get) => ({
+export const inventoryStore = create<InventoryState>((set) => ({
   items: [],
-  addLocalItem: (name, quantity) =>
-    set((state) => ({
-      items: [
-        ...state.items,
-        {
-          id: generateId(),
-          name: name.trim(),
-          quantity,
-          location: 'pantry',
-          expiresOn: nextWeekISO(),
-          expired: false,
-        },
-      ],
-    })),
-  removeLocalItem: (id) =>
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== id),
-    })),
+  error: null,
+  fetchInventory: async () => {
+    set({ error: null });
+    try {
+      const res = await inventoryApi.getInventory();
+      set({ items: res.map(mapResponseToItem) });
+    } catch (e) {
+      set({
+        error: e instanceof Error ? e.message : 'Failed to load inventory',
+      });
+    }
+  },
+  addInventoryItem: async (name, quantity) => {
+    set({ error: null });
+    try {
+      const res = await inventoryApi.addInventory([{ name: name.trim(), quantity }]);
+      const newItems = res.map(mapResponseToItem);
+      set((state) => ({ items: [...state.items, ...newItems] }));
+    } catch (e) {
+      set({
+        error: e instanceof Error ? e.message : 'Failed to add item',
+      });
+    }
+  },
+  deleteInventoryItem: async (id) => {
+    set({ error: null });
+    try {
+      await inventoryApi.deleteInventory(id);
+      set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
+    } catch (e) {
+      set({
+        error: e instanceof Error ? e.message : 'Failed to delete item',
+      });
+    }
+  },
+  clearError: () => set({ error: null }),
 }));
+
+const EXPIRING_SOON_DAYS = 3;
 
 export function expiringSoon(items: InventoryItem[]): InventoryItem[] {
   const now = new Date();
