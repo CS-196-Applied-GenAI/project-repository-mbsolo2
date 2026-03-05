@@ -96,7 +96,12 @@ describe('feedStore', () => {
 
 describe('cookbookStore', () => {
   beforeEach(() => {
-    cookbookStore.setState({ favorites: [] });
+    cookbookStore.setState({
+      recipesById: {},
+      favorites: [],
+      myRecipeIds: [],
+      cookedRecipeIds: [],
+    });
   });
 
   it('can heart and unheart recipes (favorites)', () => {
@@ -105,6 +110,66 @@ describe('cookbookStore', () => {
 
     cookbookStore.getState().unheartRecipe('r1');
     expect(cookbookStore.getState().favorites).not.toContain('r1');
+  });
+
+  it('addMyRecipe adds a recipe and returns id', () => {
+    const recipeData: Omit<Recipe, 'id'> = {
+      title: 'My Pasta',
+      cuisine: 'Italian',
+      totalMinutes: 25,
+      servings: 2,
+      tags: ['quick'],
+      why: [],
+      ingredientsHave: ['pasta', 'tomato'],
+      ingredientsMaybeWant: [],
+      instructions: ['Boil water', 'Cook pasta'],
+    };
+    const id = cookbookStore.getState().addMyRecipe(recipeData);
+
+    expect(id).toMatch(/^my-\d+$/);
+    const recipes = cookbookStore.getState().getFilteredRecipes('my-recipes');
+    expect(recipes).toHaveLength(1);
+    expect(recipes[0].id).toBe(id);
+    expect(recipes[0].title).toBe('My Pasta');
+    expect(recipes[0].tags).toEqual(['quick']);
+    expect(cookbookStore.getState().myRecipeIds).toContain(id);
+  });
+
+  it('getFilteredRecipes filters by all, favorites, my-recipes, cooked', () => {
+    const r1: Recipe = {
+      id: 'r1',
+      title: 'Recipe 1',
+      cuisine: '',
+      totalMinutes: 0,
+      servings: 2,
+      tags: [],
+      why: [],
+      ingredientsHave: [],
+      ingredientsMaybeWant: [],
+      instructions: [],
+    };
+    const id2 = cookbookStore.getState().addMyRecipe({
+      title: 'My Recipe',
+      cuisine: '',
+      totalMinutes: 0,
+      servings: 2,
+      tags: [],
+      why: [],
+      ingredientsHave: [],
+      ingredientsMaybeWant: [],
+      instructions: [],
+    });
+    cookbookStore.getState().heartRecipe('r1', r1);
+
+    expect(cookbookStore.getState().getFilteredRecipes('all')).toHaveLength(2);
+    expect(cookbookStore.getState().getFilteredRecipes('favorites')).toHaveLength(1);
+    expect(cookbookStore.getState().getFilteredRecipes('favorites')[0].id).toBe('r1');
+    expect(cookbookStore.getState().getFilteredRecipes('my-recipes')).toHaveLength(1);
+    expect(cookbookStore.getState().getFilteredRecipes('my-recipes')[0].id).toBe(id2);
+
+    cookbookStore.getState().markAsCooked('r1');
+    expect(cookbookStore.getState().getFilteredRecipes('cooked')).toHaveLength(1);
+    expect(cookbookStore.getState().getFilteredRecipes('cooked')[0].id).toBe('r1');
   });
 });
 

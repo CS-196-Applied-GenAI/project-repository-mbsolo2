@@ -4,3 +4,9 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   removeItem: jest.fn(() => Promise.resolve()),
   clear: jest.fn(() => Promise.resolve()),
 }));
+
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+  launchImageLibraryAsync: jest.fn().mockResolvedValue({ canceled: true }),
+  MediaTypeOptions: { Images: 'Images' },
+}));

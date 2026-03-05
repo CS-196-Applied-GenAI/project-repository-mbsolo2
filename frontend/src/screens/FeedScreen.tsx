@@ -69,7 +69,7 @@ export default function FeedScreen() {
           <RecipeCard
             recipe={item}
             onPress={() => setSelectedRecipeId(item.id)}
-            onHeart={() => heartRecipe(item.id)}
+            onHeart={() => heartRecipe(item.id, item)}
             onPin={() => pinRecipe(item.id)}
             onPass={() => handlePass(item.id)}
           />
@@ -79,7 +79,7 @@ export default function FeedScreen() {
         visible={selectedRecipe !== null}
         recipe={selectedRecipe}
         onClose={() => setSelectedRecipeId(undefined)}
-        onHeart={selectedRecipe ? () => heartRecipe(selectedRecipe.id) : undefined}
+        onHeart={selectedRecipe ? () => heartRecipe(selectedRecipe.id, selectedRecipe) : undefined}
         onPin={selectedRecipe ? () => pinRecipe(selectedRecipe.id) : undefined}
         onPass={selectedRecipe ? () => handlePass(selectedRecipe.id) : undefined}
       />

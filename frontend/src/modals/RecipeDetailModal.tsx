@@ -111,15 +111,21 @@ export function RecipeDetailModal({
 
           {/* H) Action buttons */}
           <View style={styles.actions}>
-            <Pressable onPress={onHeart} style={styles.actionButton} accessibilityRole="button">
-              <Text>Heart</Text>
-            </Pressable>
-            <Pressable onPress={onPin} style={styles.actionButton} accessibilityRole="button">
-              <Text>Pin</Text>
-            </Pressable>
-            <Pressable onPress={onPass} style={styles.actionButton} accessibilityRole="button">
-              <Text>Pass</Text>
-            </Pressable>
+            {onHeart != null && (
+              <Pressable onPress={onHeart} style={styles.actionButton} accessibilityRole="button">
+                <Text>Heart</Text>
+              </Pressable>
+            )}
+            {onPin != null && (
+              <Pressable onPress={onPin} style={styles.actionButton} accessibilityRole="button">
+                <Text>Pin</Text>
+              </Pressable>
+            )}
+            {onPass != null && (
+              <Pressable onPress={onPass} style={styles.actionButton} accessibilityRole="button">
+                <Text>Pass</Text>
+              </Pressable>
+            )}
           </View>
         </ScrollView>
       </View>
