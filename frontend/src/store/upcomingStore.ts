@@ -10,20 +10,35 @@ export interface PinnedItem {
   scheduledDate?: string;
 }
 
+function persist(pinned: PinnedItem[]): Promise<void> {
+  return setJson(cacheKeys.upcoming, { pinned });
+}
+
 interface UpcomingState {
   pinned: PinnedItem[];
-  pinRecipe: (recipeId: string, bucket?: Bucket) => void;
+  pinRecipe: (recipeId: string, bucket?: Bucket) => Promise<void>;
+  unpinRecipe: (recipeId: string) => Promise<void>;
   loadFromCache: () => Promise<void>;
 }
 
-export const upcomingStore = create<UpcomingState>((set) => ({
+export const upcomingStore = create<UpcomingState>((set, get) => ({
   pinned: [],
-  pinRecipe: (recipeId, bucket = 'later') =>
-    set((state) => {
-      const pinned = [...state.pinned, { recipeId, bucket }];
-      setJson(cacheKeys.upcoming, { pinned });
-      return { pinned };
-    }),
+
+  pinRecipe: async (recipeId, bucket = 'later') => {
+    const state = get();
+    if (state.pinned.some((p) => p.recipeId === recipeId)) return;
+    const pinned = [...state.pinned, { recipeId, bucket }];
+    set({ pinned });
+    await persist(pinned);
+  },
+
+  unpinRecipe: async (recipeId) => {
+    const state = get();
+    const pinned = state.pinned.filter((p) => p.recipeId !== recipeId);
+    set({ pinned });
+    await persist(pinned);
+  },
+
   loadFromCache: async () => {
     const data = await getJson<{ pinned: PinnedItem[] }>(cacheKeys.upcoming);
     if (data?.pinned) set({ pinned: data.pinned });

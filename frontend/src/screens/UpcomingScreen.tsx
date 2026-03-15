@@ -1,10 +1,15 @@
 import { useMemo } from 'react';
-import { FlatList, SectionList, StyleSheet, Text, View } from 'react-native';
+import { SectionList, StyleSheet, Text, View } from 'react-native';
 
+import { EmptyState, ScreenContainer, SectionHeader } from '../components';
+import { cookbookStore } from '../store/cookbookStore';
 import { feedStore } from '../store/feedStore';
+import { inventoryStore } from '../store/inventoryStore';
 import { upcomingStore } from '../store/upcomingStore';
 import type { Bucket } from '../store/upcomingStore';
 import type { Recipe } from '../types/recipe';
+import { colors, fontSizes, fontWeights, spacing, textStyles } from '../theme';
+import { matchRecipeToInventory, recipeUsesExpiringSoonIngredient } from '../utils/inventoryMatch';
 
 const BUCKET_ORDER: Bucket[] = ['today', 'tomorrow', 'later'];
 const BUCKET_LABELS: Record<Bucket, string> = {
@@ -15,13 +20,35 @@ const BUCKET_LABELS: Record<Bucket, string> = {
 
 export default function UpcomingScreen() {
   const pinned = upcomingStore((s) => s.pinned);
-  const recipes = feedStore((s) => s.recipes);
+  const feedRecipes = feedStore((s) => s.recipes);
+  const recipesById = cookbookStore((s) => s.recipesById);
+  const inventoryItems = inventoryStore((s) => s.items);
 
+  /** All pinned recipes: from feed first, then cookbook for any pinned id not in feed. */
   const recipeMap = useMemo(() => {
     const map = new Map<string, Recipe>();
-    recipes.forEach((r) => map.set(r.id, r));
+    feedRecipes.forEach((r) => map.set(r.id, r));
+    pinned.forEach((p) => {
+      if (!map.has(p.recipeId) && recipesById[p.recipeId]) {
+        map.set(p.recipeId, recipesById[p.recipeId]);
+      }
+    });
     return map;
-  }, [recipes]);
+  }, [feedRecipes, pinned, recipesById]);
+
+  const itemMeta = useMemo(() => {
+    const map: Record<string, { missingIngredients: boolean; usesExpiringSoon: boolean }> = {};
+    recipeMap.forEach((recipe, id) => {
+      const ingNames = recipe.ingredientsHave ?? (recipe.ingredients?.map((i) => i.name) ?? []);
+      const { missingIngredients } = matchRecipeToInventory(ingNames, inventoryItems);
+      const usesExpiringSoon = recipeUsesExpiringSoonIngredient(ingNames, inventoryItems);
+      map[id] = {
+        missingIngredients: missingIngredients.length > 0,
+        usesExpiringSoon,
+      };
+    });
+    return map;
+  }, [recipeMap, inventoryItems]);
 
   const sections = useMemo(() => {
     const raw = BUCKET_ORDER.map((bucket) => {
@@ -34,60 +61,81 @@ export default function UpcomingScreen() {
   }, [pinned, recipeMap]);
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.screen}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.recipeId}
         renderSectionHeader={({ section }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-          </View>
+          <SectionHeader title={section.title} />
         )}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={styles.title}>
-              {item.recipe?.title ?? 'Unknown recipe'}
-            </Text>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const meta = itemMeta[item.recipeId];
+          return (
+            <View style={styles.row}>
+              <Text style={styles.title}>
+                {item.recipe?.title ?? 'Unknown recipe'}
+              </Text>
+              <View style={styles.tagRow}>
+                {meta?.missingIngredients && (
+                  <Text style={styles.tagMissing}>Missing ingredients</Text>
+                )}
+                {meta?.usesExpiringSoon && (
+                  <Text style={styles.tagExpiring}>Uses expiring soon</Text>
+                )}
+              </View>
+            </View>
+          );
+        }}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No pinned recipes yet. Pin from Feed.</Text>
-          </View>
+          <EmptyState message="No pinned recipes yet. Pin from Discover or Cookbook to plan your week." />
         }
+        contentContainerStyle={sections.length === 0 ? styles.emptyList : undefined}
       />
-    </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  sectionHeader: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f5f5f5',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  screen: {
+    backgroundColor: colors.background,
   },
   row: {
-    padding: 16,
+    padding: spacing[4],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.divider,
+    backgroundColor: colors.surface,
   },
   title: {
-    fontSize: 16,
+    ...textStyles.body,
+    color: colors.text,
   },
-  empty: {
-    padding: 24,
-    alignItems: 'center',
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginTop: spacing[2],
   },
-  emptyText: {
-    fontSize: 15,
-    color: '#666',
+  tagMissing: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.medium,
+    color: colors.warning,
+    backgroundColor: colors.warningBackground,
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  tagExpiring: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.medium,
+    color: colors.warning,
+    backgroundColor: colors.warningBackground,
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  emptyList: {
+    flexGrow: 1,
   },
 });

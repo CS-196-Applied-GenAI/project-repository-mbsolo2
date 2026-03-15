@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { colors, fontSizes, fontWeights, radius, spacing } from '../theme';
+
 import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+  InventoryItemForm,
+  type InventoryItemFormValues,
+  validateInventoryForm,
+} from '../components/InventoryItemForm';
 
 export interface AddInventoryModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (name: string, quantity: number) => void | Promise<void>;
+  /** Backend accepts name, quantity, and optional expiration_date (YYYY-MM-DD). */
+  onSubmit: (name: string, quantity: number, expirationDate?: string | null) => void | Promise<void>;
 }
 
 export function AddInventoryModal({
@@ -19,24 +21,30 @@ export function AddInventoryModal({
   onClose,
   onSubmit,
 }: AddInventoryModalProps) {
-  const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('');
+  const [key, setKey] = useState(0);
 
-  const handleSubmit = async () => {
-    const trimmed = name.trim();
-    const q = parseFloat(quantity);
-    if (trimmed && !Number.isNaN(q) && q > 0) {
-      await Promise.resolve(onSubmit(trimmed, q));
-      setName('');
-      setQuantity('');
-    }
-  };
+  const handleSubmit = useCallback(
+    async (values: InventoryItemFormValues) => {
+      const err = validateInventoryForm(values, 'add');
+      if (err) return;
+      const name = values.name.trim();
+      const q = parseFloat(values.quantity);
+      if (!name || Number.isNaN(q) || q <= 0) return;
+      const expirationDate =
+        values.expirationDate.trim() !== ''
+          ? values.expirationDate.trim().slice(0, 10)
+          : undefined;
+      await Promise.resolve(onSubmit(name, q, expirationDate));
+      setKey((k) => k + 1);
+      onClose();
+    },
+    [onSubmit, onClose]
+  );
 
-  const handleDismiss = () => {
-    setName('');
-    setQuantity('');
+  const handleCancel = useCallback(() => {
+    setKey((k) => k + 1);
     onClose();
-  };
+  }, [onClose]);
 
   if (!visible) return null;
 
@@ -45,39 +53,29 @@ export function AddInventoryModal({
       visible={visible}
       animationType="slide"
       transparent
-      onRequestClose={handleDismiss}
+      onRequestClose={handleCancel}
     >
-      <Pressable style={styles.backdrop} onPress={handleDismiss}>
+      <Pressable style={styles.backdrop} onPress={handleCancel}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
-            <Text style={styles.title}>Add item</Text>
-            <Pressable onPress={handleDismiss} hitSlop={12}>
+            <Text style={styles.title}>Add ingredient</Text>
+            <Pressable
+              onPress={handleCancel}
+              style={styles.closeButton}
+              hitSlop={12}
+              accessibilityRole="button"
+            >
               <Text style={styles.close}>Cancel</Text>
             </Pressable>
           </View>
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Quantity (e.g. 2)"
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="decimal-pad"
-            />
-            <Pressable
-              style={[styles.submitButton, (!name.trim() || !quantity) && styles.submitDisabled]}
-              onPress={handleSubmit}
-              disabled={!name.trim() || !quantity}
-            >
-              <Text style={styles.submitText}>Add</Text>
-            </Pressable>
-          </View>
+          <InventoryItemForm
+            key={key}
+            initialValues={null}
+            mode="add"
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            submitLabel="Add ingredient"
+          />
         </Pressable>
       </Pressable>
     </Modal>
@@ -87,55 +85,38 @@ export function AddInventoryModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.surfaceOverlay,
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    paddingBottom: 32,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    maxHeight: '90%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[4],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ccc',
+    borderBottomColor: colors.divider,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.semibold,
+    color: colors.text,
+  },
+  closeButton: {
+    minHeight: 44,
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[2],
+    justifyContent: 'center',
   },
   close: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  form: {
-    padding: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  submitButton: {
-    marginTop: 8,
-    padding: 14,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitDisabled: {
-    opacity: 0.5,
-  },
-  submitText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.medium,
+    color: colors.accentBlue,
   },
 });

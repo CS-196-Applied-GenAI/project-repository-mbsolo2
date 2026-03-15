@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { cacheKeys, getJson, setJson } from '../services/cache';
 import type { Recipe } from '../types/recipe';
+import { upcomingStore } from './upcomingStore';
 
 export type CookbookFilter = 'all' | 'cooked' | 'favorites' | 'my-recipes';
 
@@ -12,8 +13,8 @@ interface CookbookCache {
   cookedRecipeIds: string[];
 }
 
-function persist(state: CookbookCache) {
-  setJson(cacheKeys.cookbook, state);
+function persist(state: CookbookCache): Promise<void> {
+  return setJson(cacheKeys.cookbook, state);
 }
 
 export const cookbookStore = create<{
@@ -24,8 +25,10 @@ export const cookbookStore = create<{
   heartRecipe: (recipeId: string, recipe?: Recipe) => void;
   unheartRecipe: (recipeId: string) => void;
   addMyRecipe: (recipe: Omit<Recipe, 'id'>) => string;
-  markAsCooked: (recipeId: string) => void;
-  unmarkAsCooked: (recipeId: string) => void;
+  updateRecipe: (recipeId: string, data: Omit<Recipe, 'id'>) => void;
+  deleteRecipe: (recipeId: string) => Promise<void>;
+  markAsCooked: (recipeId: string, recipe?: Recipe) => Promise<void>;
+  unmarkAsCooked: (recipeId: string) => Promise<void>;
   loadFromCache: () => Promise<void>;
   getFilteredRecipes: (filter: CookbookFilter) => Recipe[];
 }>((set, get) => ({
@@ -65,20 +68,47 @@ export const cookbookStore = create<{
     return id;
   },
 
-  markAsCooked: (recipeId) =>
+  updateRecipe: (recipeId, data) => {
     set((state) => {
-      if (state.cookedRecipeIds.includes(recipeId)) return state;
-      const cookedRecipeIds = [...state.cookedRecipeIds, recipeId];
-      persist({ ...state, cookedRecipeIds });
-      return { cookedRecipeIds };
-    }),
+      const existing = state.recipesById[recipeId];
+      if (!existing) return state;
+      const recipe: Recipe = { ...data, id: recipeId };
+      const recipesById = { ...state.recipesById, [recipeId]: recipe };
+      persist({ ...state, recipesById });
+      return { recipesById };
+    });
+  },
 
-  unmarkAsCooked: (recipeId) =>
+  deleteRecipe: async (recipeId) => {
+    upcomingStore.getState().unpinRecipe(recipeId);
     set((state) => {
+      const { [recipeId]: _, ...recipesById } = state.recipesById;
+      const favorites = state.favorites.filter((id) => id !== recipeId);
+      const myRecipeIds = state.myRecipeIds.filter((id) => id !== recipeId);
       const cookedRecipeIds = state.cookedRecipeIds.filter((id) => id !== recipeId);
-      persist({ ...state, cookedRecipeIds });
-      return { cookedRecipeIds };
-    }),
+      return { recipesById, favorites, myRecipeIds, cookedRecipeIds };
+    });
+    await persist(get());
+  },
+
+  markAsCooked: async (recipeId, recipe) => {
+    const state = get();
+    if (state.cookedRecipeIds.includes(recipeId)) return;
+    const cookedRecipeIds = [...state.cookedRecipeIds, recipeId];
+    const recipesById =
+      recipe != null && !(recipeId in state.recipesById)
+        ? { ...state.recipesById, [recipeId]: recipe }
+        : state.recipesById;
+    set({ recipesById, cookedRecipeIds });
+    await persist(get());
+  },
+
+  unmarkAsCooked: async (recipeId) => {
+    const state = get();
+    const cookedRecipeIds = state.cookedRecipeIds.filter((id) => id !== recipeId);
+    set({ cookedRecipeIds });
+    await persist(get());
+  },
 
   loadFromCache: async () => {
     const data = await getJson<CookbookCache & { myRecipes?: string[] }>(cacheKeys.cookbook);

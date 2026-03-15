@@ -37,8 +37,14 @@ class InventoryService:
         for raw in items:
             name = str(raw["name"])
             quantity = float(raw["quantity"])
+            user_expiration = raw.get("expiration_date")
+            user_category = raw.get("category")
 
-            category = infer_category(name)
+            category = (
+                str(user_category).strip().lower()
+                if user_category and str(user_category).strip()
+                else infer_category(name)
+            )
             location = infer_location(name)
             guidance = infer_storage_guidance(name, category)
 
@@ -52,7 +58,7 @@ class InventoryService:
             )
             effective = effective_expiration(
                 estimated=estimated_expiration,
-                override=None,
+                override=user_expiration,
             )
             expired = is_expired(effective, now=created_at)
 
@@ -67,7 +73,7 @@ class InventoryService:
                 is_staple=is_staple,
                 opened=opened,
                 expiration_date_estimated=estimated_expiration,
-                expiration_date_user_override=None,
+                expiration_date_user_override=user_expiration,
                 expired_flag=expired,
             )
 

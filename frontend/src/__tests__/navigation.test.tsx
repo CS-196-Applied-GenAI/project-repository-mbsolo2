@@ -8,9 +8,9 @@ jest.mock('../api/mealplanApi', () => ({
 }));
 
 describe('Navigation', () => {
-  it('renders App and finds the Feed tab label', () => {
+  it('renders App and finds the Discover tab label', () => {
     render(<App />);
-    const feedElements = screen.getAllByText('Feed');
-    expect(feedElements.length).toBeGreaterThanOrEqual(1);
+    const discoverElements = screen.getAllByText('Discover');
+    expect(discoverElements.length).toBeGreaterThanOrEqual(1);
   });
 });

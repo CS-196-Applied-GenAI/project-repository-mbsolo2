@@ -184,6 +184,13 @@ describe('upcomingStore', () => {
     expect(pinned.some((p) => p.recipeId === 'r1')).toBe(true);
     expect(pinned.find((p) => p.recipeId === 'r1')?.bucket).toBe('later');
   });
+
+  it('can unpin a recipe (toggle)', () => {
+    upcomingStore.getState().pinRecipe('r1');
+    expect(upcomingStore.getState().pinned.some((p) => p.recipeId === 'r1')).toBe(true);
+    upcomingStore.getState().unpinRecipe('r1');
+    expect(upcomingStore.getState().pinned.some((p) => p.recipeId === 'r1')).toBe(false);
+  });
 });
 
 describe('inventoryStore', () => {

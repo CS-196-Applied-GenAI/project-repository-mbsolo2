@@ -10,6 +10,7 @@ import { feedStore } from './src/store/feedStore';
 import { inventoryStore } from './src/store/inventoryStore';
 import { uiStore } from './src/store/uiStore';
 import { upcomingStore } from './src/store/upcomingStore';
+import { colors, fontSizes, layout, spacing } from './src/theme';
 
 function OfflineBanner() {
   const visible = uiStore((s) => s.offlineBannerVisible);
@@ -50,24 +51,23 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
+    ...layout.flex1,
+    backgroundColor: colors.background,
   },
-  main: {
-    flex: 1,
-  },
+  main: layout.flex1,
   offlineBanner: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#f0ad4e',
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[4],
+    backgroundColor: colors.offlineBanner,
   },
   offlineText: {
-    color: '#000',
-    fontSize: 14,
+    color: colors.text,
+    fontSize: fontSizes.sm,
   },
   offlineHint: {
-    color: '#000',
-    fontSize: 12,
-    marginTop: 4,
+    color: colors.text,
+    fontSize: fontSizes.xs,
+    marginTop: spacing[1],
     opacity: 0.9,
   },
 });

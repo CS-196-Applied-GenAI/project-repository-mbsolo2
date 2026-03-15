@@ -9,6 +9,8 @@ class MealplanGenerateRequest(BaseModel):
     """Optional preferences for MVP; can be empty."""
 
     preferences: dict | None = None
+    """User-created recipes from the client; merged with provider pool for scoring."""
+    user_recipes: list[RecipeCandidate] | None = None
 
 
 class MealplanGenerateResponse(BaseModel):

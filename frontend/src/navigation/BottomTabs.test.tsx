@@ -9,16 +9,17 @@ jest.mock('../api/mealplanApi', () => ({
 }));
 
 describe('BottomTabs', () => {
-  it('renders the four tab labels', () => {
+  it('renders the five tab labels', () => {
     render(
       <NavigationContainer>
         <BottomTabs />
       </NavigationContainer>
     );
 
-    expect(screen.getAllByText('Feed').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Upcoming').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Discover').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Inventory').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('My Cookbook').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Cookbook').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Add Recipe').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Profile').length).toBeGreaterThanOrEqual(1);
   });
 });

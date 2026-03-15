@@ -8,6 +8,10 @@ from pydantic import BaseModel
 class InventoryCreateItem(BaseModel):
     name: str
     quantity: float
+    """Optional user override for expiration (YYYY-MM-DD). When omitted, backend estimates."""
+    expiration_date: date | None = None
+    """Optional category (e.g. dairy, produce). When omitted, backend infers from name."""
+    category: str | None = None
 
 
 class InventoryCreateRequest(BaseModel):

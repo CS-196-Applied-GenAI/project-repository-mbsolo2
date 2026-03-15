@@ -1,22 +1,24 @@
 import { apiFetch } from './client';
+import type {
+  RecipeCandidateResponse,
+  MealplanGenerateRequest,
+  MealplanGenerateResponse,
+} from '../types/recipe';
 
-export interface MealplanRecipe {
-  recipe_id: string;
-  title: string;
-  servings: number;
-  ingredients: Array<{ name: string; amount: number; unit: string }>;
-  instructions: string[];
-}
+export type { MealplanRecipe, MealplanGenerateResponse } from '../types/recipe';
+export type { RecipeCandidateResponse } from '../types/recipe';
+/** @deprecated Use MealplanGenerateResponse. */
+export type GenerateMealplanResponse = MealplanGenerateResponse;
 
-export interface GenerateMealplanResponse {
-  visible_candidates: MealplanRecipe[];
-  candidate_pool_size: number;
-}
-
-export async function generateMealplan(): Promise<MealplanRecipe[]> {
-  const res = await apiFetch<GenerateMealplanResponse>('api/v1/mealplan/generate', {
-    method: 'POST',
-    body: {},
-  });
+export async function generateMealplan(
+  request?: MealplanGenerateRequest | null
+): Promise<RecipeCandidateResponse[]> {
+  const res = await apiFetch<MealplanGenerateResponse>(
+    'api/v1/mealplan/generate',
+    {
+      method: 'POST',
+      body: (request ?? {}) as Record<string, unknown>,
+    }
+  );
   return res.visible_candidates ?? [];
 }

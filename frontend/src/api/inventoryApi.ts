@@ -1,31 +1,26 @@
 import { apiFetch } from './client';
+import type {
+  InventoryItemResponse,
+  InventoryCreateItemRequest,
+  InventoryCreateRequest,
+} from '../types/inventory';
 
-export interface InventoryItemResponse {
-  item_id: string;
-  name: string;
-  quantity: number;
-  created_at: string;
-  location: string;
-  category: string;
-  storage_guidance: string;
-  expiration_date_estimated: string;
-  expiration_date_user_override: string | null;
-  expired_flag: boolean;
-}
+export type { InventoryItemResponse, InventoryCreateItemRequest } from '../types/inventory';
 
-export interface AddInventoryItem {
-  name: string;
-  quantity: number;
-}
+/** @deprecated Use InventoryCreateItemRequest from types. Kept for backward compatibility. */
+export type AddInventoryItem = InventoryCreateItemRequest;
 
 export async function getInventory(): Promise<InventoryItemResponse[]> {
   return apiFetch<InventoryItemResponse[]>('api/v1/inventory');
 }
 
-export async function addInventory(items: AddInventoryItem[]): Promise<InventoryItemResponse[]> {
+export async function addInventory(
+  items: InventoryCreateItemRequest[]
+): Promise<InventoryItemResponse[]> {
+  const payload: InventoryCreateRequest = { items };
   return apiFetch<InventoryItemResponse[]>('api/v1/inventory', {
     method: 'POST',
-    body: { items },
+    body: payload as unknown as Record<string, unknown>,
   });
 }
 

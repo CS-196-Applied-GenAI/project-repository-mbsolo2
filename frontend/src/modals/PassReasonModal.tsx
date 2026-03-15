@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 
+import { colors, fontSizes, fontWeights, radius, spacing } from '../theme';
+
 export type PassReasonOption =
   | 'ingredient_dislike'
   | 'dish_type_dislike'
@@ -104,6 +106,7 @@ export function PassReasonModal({
               <TextInput
                 style={styles.input}
                 placeholder="Which ingredient?"
+                placeholderTextColor={colors.textTertiary}
                 value={ingredient}
                 onChangeText={setIngredient}
               />
@@ -112,6 +115,7 @@ export function PassReasonModal({
               <TextInput
                 style={styles.input}
                 placeholder="Which dish type?"
+                placeholderTextColor={colors.textTertiary}
                 value={dishType}
                 onChangeText={setDishType}
               />
@@ -120,6 +124,7 @@ export function PassReasonModal({
               <TextInput
                 style={[styles.input, styles.inputMultiline]}
                 placeholder="Tell us more (optional)"
+                placeholderTextColor={colors.textTertiary}
                 value={freeText}
                 onChangeText={setFreeText}
                 multiline
@@ -140,65 +145,68 @@ export function PassReasonModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.surfaceOverlay,
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     maxHeight: '70%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing[4],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ccc',
+    borderBottomColor: colors.divider,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.semibold,
+    color: colors.text,
   },
   close: {
-    fontSize: 16,
-    color: '#007AFF',
+    fontSize: fontSizes.md,
+    color: colors.accentBlue,
+    fontWeight: fontWeights.medium,
   },
   scroll: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing[4],
+    paddingBottom: spacing[8],
   },
   option: {
-    padding: 14,
-    marginBottom: 8,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    padding: spacing[3],
+    marginBottom: spacing[2],
+    backgroundColor: colors.surfaceSubtle,
+    borderRadius: radius.md,
   },
   optionSelected: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: colors.borderLight,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-    fontSize: 16,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing[3],
+    marginTop: spacing[3],
+    fontSize: fontSizes.md,
+    color: colors.text,
   },
   inputMultiline: {
     minHeight: 80,
   },
   submitButton: {
-    marginTop: 20,
-    padding: 14,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
+    marginTop: spacing[5],
+    padding: spacing[3],
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
     alignItems: 'center',
   },
   submitText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.textInverse,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
   },
 });

@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 
-import * as mealplanApi from '../api/mealplanApi';
 import { cacheKeys, getJson, setJson } from '../services/cache';
+import { recipeService, type MealplanRecipe } from '../services/recipeService';
 import type { Recipe } from '../types/recipe';
 import { uiStore } from './uiStore';
 
-function mapMealplanToRecipe(m: mealplanApi.MealplanRecipe): Recipe {
+function mapMealplanToRecipe(m: MealplanRecipe): Recipe {
   return {
     id: m.recipe_id,
     title: m.title,
@@ -14,6 +14,7 @@ function mapMealplanToRecipe(m: mealplanApi.MealplanRecipe): Recipe {
     servings: m.servings,
     tags: [],
     why: [],
+    ingredients: m.ingredients,
     ingredientsHave: m.ingredients.map((i) => i.name),
     ingredientsMaybeWant: [],
     instructions: m.instructions,
@@ -24,6 +25,7 @@ interface FeedState {
   recipes: Recipe[];
   passedRecipeIds: string[];
   selectedRecipeId: string | undefined;
+  feedError: string | null;
   setRecipes: (recipes: Recipe[]) => void;
   fetchFeed: () => Promise<void>;
   loadFromCache: () => Promise<void>;
@@ -36,10 +38,13 @@ export const feedStore = create<FeedState>((set) => ({
   recipes: [],
   passedRecipeIds: [],
   selectedRecipeId: undefined,
+  feedError: null,
   setRecipes: (recipes) => set({ recipes }),
   fetchFeed: async () => {
     try {
-      const list = await mealplanApi.generateMealplan();
+      set({ feedError: null });
+      const request = recipeService.getDiscoverRequestWithMyRecipes();
+      const list = await recipeService.getDiscoverRecipes(request);
       const recipes = list.map(mapMealplanToRecipe);
       set({ recipes });
       const state = feedStore.getState();
@@ -50,6 +55,9 @@ export const feedStore = create<FeedState>((set) => ({
       uiStore.getState().hideOfflineBanner();
       uiStore.getState().setFeedStale(false);
     } catch {
+      set({
+        feedError: 'We couldn’t load new recipes. Pull to try again or we’ll show cached recipes.',
+      });
       await feedStore.getState().loadFromCache();
       uiStore.getState().showOfflineBanner();
     }

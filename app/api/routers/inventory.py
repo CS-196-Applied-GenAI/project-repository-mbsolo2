@@ -19,7 +19,15 @@ def create_inventory_items(
 ) -> list[InventoryItemOut]:
     service = InventoryService(db)
     items = service.add_items(
-        [{"name": item.name, "quantity": item.quantity} for item in payload.items]
+        [
+            {
+                "name": item.name,
+                "quantity": item.quantity,
+                "expiration_date": item.expiration_date,
+                "category": item.category,
+            }
+            for item in payload.items
+        ]
     )
     return items
 

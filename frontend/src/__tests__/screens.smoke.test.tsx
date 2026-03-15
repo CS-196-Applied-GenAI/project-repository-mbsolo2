@@ -1,10 +1,12 @@
+import { NavigationContainer } from '@react-navigation/native';
 import { render, screen } from '@testing-library/react-native';
 import React from 'react';
 
+import AddRecipeScreen from '../screens/AddRecipeScreen';
 import CookbookScreen from '../screens/CookbookScreen';
 import FeedScreen from '../screens/FeedScreen';
 import InventoryScreen from '../screens/InventoryScreen';
-import UpcomingScreen from '../screens/UpcomingScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 jest.mock('../api/mealplanApi', () => ({
   generateMealplan: jest.fn().mockResolvedValue([]),
@@ -18,22 +20,31 @@ jest.mock('../api/inventoryApi', () => ({
 
 describe('screens smoke', () => {
   it('FeedScreen renders', () => {
-    const { container } = render(<FeedScreen />);
-    expect(container).toBeTruthy();
+    const { root } = render(<FeedScreen />);
+    expect(root).toBeTruthy();
   });
 
-  it('UpcomingScreen renders', () => {
-    const { container } = render(<UpcomingScreen />);
-    expect(container).toBeTruthy();
+  it('InventoryScreen renders with title Kitchen Inventory', () => {
+    render(
+      <NavigationContainer>
+        <InventoryScreen />
+      </NavigationContainer>
+    );
+    expect(screen.getByText('Kitchen Inventory')).toBeTruthy();
   });
 
-  it('InventoryScreen renders with title Inventory', () => {
-    render(<InventoryScreen />);
-    expect(screen.getByText('Inventory')).toBeTruthy();
-  });
-
-  it('CookbookScreen renders with title My Cookbook', () => {
+  it('CookbookScreen renders with title My Cookbook', async () => {
     render(<CookbookScreen />);
-    expect(screen.getByText('My Cookbook')).toBeTruthy();
+    expect(await screen.findByText('My Cookbook')).toBeTruthy();
+  });
+
+  it('AddRecipeScreen renders with title Add Recipe', () => {
+    render(<AddRecipeScreen />);
+    expect(screen.getByText('Add Recipe')).toBeTruthy();
+  });
+
+  it('ProfileScreen renders with title Profile', async () => {
+    render(<ProfileScreen />);
+    expect(await screen.findByText('Profile')).toBeTruthy();
   });
 });
